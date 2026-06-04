@@ -1,0 +1,202 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+
+export default function ProblemEngine() {
+  const [step, setStep] = useState(0);
+  const [role, setRole] = useState("student");
+  const [responses, setResponses] = useState({
+    fishbone: { people: "", process: "", tech: "", environment: "", policy: "" },
+    hmw: { condition: "", verb: "", purpose: "", parameter: "" }
+  });
+  const [input, setInput] = useState("");
+  const [feedback, setFeedback] = useState("");
+
+  const steps = [
+    "Select SDG","WHO","WHAT","WHERE","WHEN","WHY","HOW","Fishbone","Gap","HMW Builder"
+  ];
+
+  const prompts = [
+    "Choose an SDG and define a specific issue.",
+    "WHO is affected? (be precise)",
+    "WHAT is the exact problem?",
+    "WHERE does it occur?",
+    "WHEN does it happen most?",
+    "WHY does it happen? (root causes)",
+    "HOW is it currently handled?",
+    "Analyse root causes by category",
+    "What gap is NOT addressed?",
+    "Build your HMW statement"
+  ];
+
+  const researchPrompts = [
+    "What real-world data or report could confirm this issue?",
+    "Where would you find data about this group?",
+    "Can you find an example or statistic to support this problem?",
+    "Is there a location-based dataset or case study?",
+    "When is this documented or reported?",
+    "What evidence supports this cause vs symptom?",
+    "What reports evaluate current solutions?",
+    "Which category lacks evidence? What should you research?",
+    "What evidence proves this gap exists?",
+    "What insight from your research supports this HMW?"
+  ];
+
+
+  const coach = (text, step) => {
+    if (text.length < 25) return "Add more detail with a concrete example.";
+    if (step === 1 && !text.match(/\b(student|youth|worker|community|group)\b/i)) {
+      return "Name a specific group (e.g. rural students, gig workers).";
+    }
+
+    if (step === 5) {
+      return "Check: is this a root cause or still a symptom?";
+    }
+
+    if (step === 6) {
+      return "What are the weaknesses in current solutions?";
+    }
+
+    if (step === 8) {
+      return "Be precise — what exactly is missing or underserved?";
+    }
+
+    return "Strong — refine with more specificity or evidence.";
+  };
+
+  const handleNext = () => {
+    if (!input && step < 7) return;
+
+    if (step < 7) {
+      const fb = coach(input, step);
+      setFeedback(fb);
+      setResponses({ ...responses, [steps[step]]: input });
+      setInput("");
+    }
+
+    if (step < steps.length - 1) setStep(step + 1);
+  };
+
+  const updateFishbone = (field, value) => {
+    setResponses({ ...responses, fishbone: { ...responses.fishbone, [field]: value } });
+  };
+
+  const updateHMW = (field, value) => {
+    setResponses({ ...responses, hmw: { ...responses.hmw, [field]: value } });
+  };
+
+  // ===== TEACHER DASHBOARD VIEW =====
+  if (role === "teacher") {
+    return (
+      <div className="p-6 grid gap-6">
+        <h1 className="text-2xl font-bold">Teacher Dashboard</h1>
+
+
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="font-semibold mb-2">Student Progress</h2>
+            <p>Current Step: {steps[step]}</p>
+            <Progress value={(step / (steps.length - 1)) * 100} />
+          </CardContent>
+        </Card>
+
+
+        <Card>
+          <CardContent className="p-4">
+            <h2 className="font-semibold mb-2">Student Responses</h2>
+            {Object.entries(responses).map(([key, val], i) => (
+              typeof val === "string" && val && (
+                <div key={i} className="mb-2">
+                  <strong>{key}:</strong>
+                  <p className="text-sm">{val}</p>
+                </div>
+              )
+            ))}
+          </CardContent>
+        </Card>
+
+
+        <Button onClick={() => setRole("student")}>Back to Student View</Button>
+      </div>
+    );
+  }
+
+
+  // ===== STUDENT VIEW =====
+  return (
+    <div className="p-6 grid gap-6">
+      <h1 className="text-2xl font-bold">Problem Framing Engine</h1>
+
+      <Button onClick={() => setRole("teacher")}>Switch to Teacher View</Button>
+
+
+      <Progress value={(step / (steps.length - 1)) * 100} />
+
+      <Card>
+        <CardContent className="p-4">
+          <h2 className="text-xl font-semibold">{steps[step]}</h2>
+          {step < 7 && (
+            <>
+              <p className="mb-2">{prompts[step]}</p>
+              <p className="text-blue-600 text-sm mb-3">🔍 Research prompt: {researchPrompts[step]}</p>
+
+
+              <textarea
+                className="w-full border rounded p-2 mb-4"
+                rows={4}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+
+
+              <Button onClick={handleNext}>Next</Button>
+
+
+              {feedback && <p className="mt-3 text-sm">🤖 {feedback}</p>}
+            </>
+          )}
+
+          {step === 7 && (
+            <div className="grid gap-2">
+              {Object.keys(responses.fishbone).map((cat) => (
+                <input
+                  key={cat}
+                  className="border p-2 rounded"
+                  placeholder={cat}
+                  value={responses.fishbone[cat]}
+                  onChange={(e) => updateFishbone(cat, e.target.value)}
+                />
+              ))}
+              <p className="text-blue-600 text-sm">🔍 Research: Which category needs evidence?</p>
+              <Button onClick={handleNext}>Next</Button>
+            </div>
+          )}
+
+          {step === 8 && (
+            <>
+              <textarea
+                className="w-full border rounded p-2 mb-4"
+                rows={4}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+              <p className="text-blue-600 text-sm">🔍 What evidence shows this gap exists?</p>
+              <Button onClick={handleNext}>Next</Button>
+            </>
+          )}
+
+          {step === 9 && (
+            <div className="grid gap-2">
+              <input placeholder="Condition" className="border p-2" onChange={(e) => updateHMW("condition", e.target.value)} />
+              <input placeholder="Key Verb Phrase" className="border p-2" onChange={(e) => updateHMW("verb", e.target.value)} />
+              <input placeholder="Purpose" className="border p-2" onChange={(e) => updateHMW("purpose", e.target.value)} />
+              <input placeholder="Parameter" className="border p-2" onChange={(e) => updateHMW("parameter", e.target.value)} />
+              <p className="text-sm mt-2">How might we {responses.hmw.verb} for {responses.hmw.condition} so that {responses.hmw.purpose} within {responses.hmw.parameter}?</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
