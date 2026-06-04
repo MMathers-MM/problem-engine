@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Problem Framing Engine</title>
+</head>
+
+<body style="font-family: Arial; padding: 20px;">
+
+<h1>Problem Framing Engine</h1>
+
+<label>Team Name:</label><br>
+<input id="team" style="padding:5px; width:200px;"><br><br>
+
+<label>Stage:</label><br>
+<select id="step">
+  <option>SDG</option>
+  <option>WHO</option>
+  <option>WHAT</option>
+  <option>WHERE</option>
+  <option>WHEN</option>
+  <option>WHY</option>
+  <option>HOW</option>
+  <option>Fishbone</option>
+  <option>Gap</option>
+  <option>HMW</option>
+</select><br><br>
+
+<label>Your Response:</label><br>
+<textarea id="answer" rows="5" cols="50"></textarea><br><br>
+
+<button onclick="submitData()">Submit</button>
+
+<p id="status"></p>
+
+<script>
+const SHEET_URL = "PASTE_YOUR_GOOGLE_SCRIPT_URL_HERE";
+
+function submitData() {
+  const data = {
+    team: document.getElementById("team").value,
+    step: document.getElementById("step").value,
+    answer: document.getElementById("answer").value,
+    time: new Date().toISOString()
+  };
+
+  fetch(SHEET_URL, {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+
+  document.getElementById("status").innerText = "✅ Saved!";
+}
+</script>
+
+</body>
+</html>
